@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OptiShrink Pro | Bulk Image Shrinker Engine</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', system-ui; margin:0; background:#f1f5f9; color: #1e293b; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+    header { background: #0f172a; color: #fff; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .nav-link { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 6px 12px; border-radius: 6px; transition: all 0.2s; color: #94a3b8; }
+    .nav-link:hover { color: #fff; background: rgba(255,255,255,0.05); }
+    .nav-link.active { color: #fff; background: #3b82f6; }
+    .controls-line { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 12px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .ctrl-group { display: flex; align-items: center; gap: 6px; white-space: nowrap; transition: all 0.3s; }
+    .ctrl-label { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; }
+    .input-mini { padding: 6px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 12px; font-weight: 700; outline: none; transition: all 0.2s; }
+    .input-mini:focus { border-color: #3b82f6; background: #fff; }
+    .select-mini { padding: 6px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 12px; font-weight: 700; outline: none; cursor: pointer; }
+    .viewport { flex-grow: 1; overflow-y: auto; padding: 10px; background: #f1f5f9; }
+    .card { background: #fff; padding: 8px 12px; border-bottom: 1px solid #f1f5f9; font-size: 11px; display: flex; align-items: center; gap: 10px; min-height: 44px; }
+    .card img { width: 32px; height: 32px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
+    .filename { font-weight: 700; color: #334155; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; }
+    .stats-reduced { color: #059669; font-weight: 800; }
+    .progress-container { height: 4px; background: #e2e8f0; width: 100%; }
+    .progress-bar { height: 100%; width: 0%; background: #3b82f6; transition: width 0.3s; }
+    .btn-main { padding: 10px 16px; border-radius: 10px; font-size: 11px; font-weight: 800; text-transform: uppercase; transition: all 0.2s; display: flex; align-items: center; cursor: pointer; }
+    .btn-blue { background: #3b82f6; color: #fff; }
+    .btn-blue:disabled { background: #cbd5e1; cursor: not-allowed; }
+    .analysis-bar { background: #0f172a; color: white; padding: 6px 16px; display: flex; flex-wrap: wrap; gap: 12px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+    
+    /* Auto-Mode styles */
+    .mode-auto { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
+    .badge-auto { font-size: 8px; background: #3b82f6; color: white; padding: 2px 5px; border-radius: 4px; margin-left: 4px; display: none; }
+    .has-target .badge-auto { display: inline-block; }
+
+    .custom-scroll::-webkit-scrollbar { width: 6px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+</style>
+</head>
+<body id="mainBody">
+
+    <header class="shrink-0">
+        <div class="flex items-center gap-6">
+            <a href="#" class="flex items-center gap-2">
+                <div class="bg-blue-600 p-1.5 rounded-lg shadow-lg">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                </div>
+                <span class="text-sm font-black uppercase tracking-tighter">OptiShrink <span class="text-blue-500">PRO</span></span>
+            </a>
+            
+            <nav class="hidden sm:flex items-center gap-1">
+                <a href="index.html" class="nav-link">Overview</a>
+                <a href="bulk_processor.html" class="nav-link active">Bulk Shrinker</a>
+                <a href="image_simulation.html" class="nav-link">Simulator</a>
+            </nav>
+        </div>
+
+        <div id="statusTag" class="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+            <span id="dot" class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_5px_#10b981]"></span>
+            <span id="statusLabel">Bulk Engine Ready</span>
+        </div>
+    </header>
+
+    <div class="analysis-bar shrink-0">
+        <div>Images in Queue: <span id="dashTotal" class="text-blue-400">0</span></div>
+        <div>Space Saved: <span id="dashSaved" class="text-emerald-400">0.00 MB</span></div>
+        <div>Shrink Ratio: <span id="dashAvg" class="text-emerald-400">0%</span></div>
+    </div>
+
+    <div class="controls-line shrink-0">
+        <div class="flex gap-2">
+            <button onclick="fileInput.click()" class="btn-main bg-slate-100 text-slate-700 hover:bg-slate-200">Add Images</button>
+            <button onclick="folderInput.click()" class="btn-main bg-emerald-50 text-emerald-700 border border-emerald-100">Add Folder</button>
+        </div>
+
+        <div class="h-6 w-px bg-slate-200 mx-2 hidden sm:block"></div>
+
+        <!-- 1. Shrink Width -->
+        <div id="widthGroup" class="ctrl-group">
+            <label class="ctrl-label">Shrink Width <span class="badge-auto">AUTO</span></label>
+            <div class="flex items-center gap-2">
+                <input type="range" id="widthSlider" min="100" max="3840" step="10" value="1200" class="w-24 accent-blue-600 cursor-pointer">
+                <input type="number" id="maxWidth" value="1200" class="input-mini w-20 text-center border rounded">
+            </div>
+        </div>
+
+        <div class="h-6 w-px bg-slate-200 mx-1 hidden sm:block"></div>
+
+        <!-- 2. Quality -->
+        <div id="qualityGroup" class="ctrl-group">
+            <label class="ctrl-label">Quality <span class="badge-auto">AUTO</span></label>
+            <div class="flex items-center gap-2">
+                <input type="range" id="qualitySlider" min="0.1" max="1" step="0.05" value="0.8" class="w-24 accent-blue-600 cursor-pointer">
+                <div class="relative">
+                    <input type="number" id="qualityNum" min="10" max="100" value="80" class="input-mini w-16 text-center border rounded pr-4">
+                    <span class="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 pointer-events-none">%</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="h-6 w-px bg-slate-200 mx-1 hidden sm:block"></div>
+
+        <!-- 3. Format -->
+        <div class="ctrl-group">
+            <label class="ctrl-label">Format</label>
+            <select id="exportFormat" class="select-mini border rounded">
+                <option value="image/jpeg">JPG</option>
+                <option value="image/png">PNG</option>
+                <option value="image/webp">WebP</option>
+            </select>
+        </div>
+
+        <div class="h-6 w-px bg-slate-200 mx-1 hidden sm:block"></div>
+
+        <!-- 4. Target KB -->
+        <div class="ctrl-group">
+            <label class="ctrl-label text-blue-600">Target KB</label>
+            <div class="relative">
+                <input type="number" id="targetKB" placeholder="Manual" class="input-mini w-24 text-center border-2 border-blue-100 focus:border-blue-500 rounded pr-5">
+                <span class="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-black text-blue-400 pointer-events-none">KB</span>
+            </div>
+        </div>
+
+        <div class="flex gap-2 sm:ml-auto">
+            <button id="btnSimpleDownload" class="hidden btn-main bg-emerald-600 text-white hover:bg-emerald-700" onclick="downloadAllSimple()">Download Images</button>
+            <button id="btnZip" class="hidden btn-main bg-slate-800 text-white hover:bg-slate-900" onclick="downloadZip()">Download .Zip</button>
+            <button id="btnProcess" disabled onclick="compressAll()" class="btn-main btn-blue">Shrink All Now</button>
+        </div>
+    </div>
+
+    <div class="progress-container shrink-0"><div id="bar" class="progress-bar"></div></div>
+
+    <main class="viewport custom-scroll">
+        <!-- Clear All Button Header from index.html reference -->
+        <div id="queueHeader" class="hidden flex justify-between items-center mb-3 px-1">
+            <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Workbench Queue (<span id="countTotalUI">0</span>)</div>
+            <button onclick="resetQueue()" class="text-[10px] font-black text-red-400 uppercase hover:text-red-600 transition">Clear All</button>
+        </div>
+
+        <div id="grid">
+            <div class="p-20 text-center opacity-30 text-slate-500 font-black uppercase tracking-widest text-sm">
+                Workbench Empty. Load folders to shrink.
+            </div>
+        </div>
+    </main>
+
+    <input type="file" id="fileInput" multiple hidden>
+    <input type="file" id="folderInput" webkitdirectory multiple hidden>
+
+<script>
+// Smart Web Worker code for Target-KB Auto Scaling
+const workerCode = `
+self.onmessage = async function(e) {
+    const { file, q, maxW, index, targetSize, format } = e.data;
+    try {
+        const originalBitmap = await createImageBitmap(file);
+        const targetBytes = targetSize * 1024;
+        
+        let finalBlob = null;
+        let currentWidth = maxW;
+        let attempts = 0;
+        const maxAttempts = 15;
+
+        async function tryProcess(w, quality) {
+            const scale = Math.min(1, w / originalBitmap.width);
+            const canvas = new OffscreenCanvas(Math.round(originalBitmap.width * scale), Math.round(originalBitmap.height * scale));
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(originalBitmap, 0, 0, canvas.width, canvas.height);
+            return await canvas.convertToBlob({ type: format, quality: quality });
+        }
+
+        if (targetSize > 0 && (format === 'image/jpeg' || format === 'image/webp')) {
+            let found = false;
+            let lowQ = 0.1, highQ = 1.0;
+            for(let i=0; i<5; i++) {
+                let midQ = (lowQ + highQ) / 2;
+                let testBlob = await tryProcess(currentWidth, midQ);
+                if (testBlob.size <= targetBytes) {
+                    finalBlob = testBlob;
+                    lowQ = midQ;
+                    found = true;
+                } else {
+                    highQ = midQ;
+                }
+            }
+            if (!found || (finalBlob && finalBlob.size > targetBytes * 1.1)) {
+                while (currentWidth > 200 && attempts < maxAttempts) {
+                    currentWidth = Math.round(currentWidth * 0.8);
+                    let testBlob = await tryProcess(currentWidth, 0.4);
+                    if (testBlob.size <= targetBytes) {
+                        finalBlob = testBlob;
+                        break;
+                    }
+                    attempts++;
+                }
+            }
+        }
+        if (!finalBlob) {
+            finalBlob = await tryProcess(maxW, q);
+        }
+        originalBitmap.close();
+        self.postMessage({ blob: finalBlob, index, success: true });
+    } catch (err) {
+        self.postMessage({ index, success: false });
+    }
+};
+`;
+
+let files = [];
+let results = [];
+let isCompressed = false;
+let totalSavedBytes = 0;
+const workerUrl = URL.createObjectURL(new Blob([workerCode], { type: 'application/javascript' }));
+
+// UI References
+const fileInput = document.getElementById('fileInput');
+const folderInput = document.getElementById('folderInput');
+const qSlider = document.getElementById('qualitySlider');
+const qInput = document.getElementById('qualityNum');
+const wSlider = document.getElementById('widthSlider');
+const wInput = document.getElementById('maxWidth');
+const targetKBInput = document.getElementById('targetKB');
+const formatSelect = document.getElementById('exportFormat');
+const btnProcess = document.getElementById('btnProcess');
+const queueHeader = document.getElementById('queueHeader');
+const grid = document.getElementById('grid');
+const bar = document.getElementById('bar');
+const statusLabel = document.getElementById('statusLabel');
+
+// --- AUTO ADJUST UI LOGIC ---
+
+targetKBInput.oninput = () => {
+    const hasTarget = targetKBInput.value > 0;
+    const body = document.getElementById('mainBody');
+    const wGroup = document.getElementById('widthGroup');
+    const qGroup = document.getElementById('qualityGroup');
+
+    if (hasTarget) {
+        body.classList.add('has-target');
+        wGroup.classList.add('mode-auto');
+        qGroup.classList.add('mode-auto');
+    } else {
+        body.classList.remove('has-target');
+        wGroup.classList.remove('mode-auto');
+        qGroup.classList.remove('mode-auto');
+    }
+};
+
+// --- SYNCHRONIZATION LOGIC ---
+
+qSlider.oninput = () => { qInput.value = Math.round(qSlider.value * 100); };
+qInput.oninput = () => {
+    let val = parseInt(qInput.value);
+    if (isNaN(val)) return;
+    if (val > 100) val = 100;
+    if (val < 1) val = 1;
+    qSlider.value = val / 100;
+};
+
+wSlider.oninput = () => { wInput.value = wSlider.value; };
+wInput.oninput = () => {
+    let val = parseInt(wInput.value);
+    if (isNaN(val)) return;
+    if (val > 3840) val = 3840;
+    if (val < 100) val = 100;
+    wSlider.value = val;
+};
+
+// --- CORE APP LOGIC ---
+
+fileInput.onchange = e => handleFiles(e.target.files);
+folderInput.onchange = e => handleFiles(e.target.files);
+
+function handleFiles(list) {
+    const newFiles = [...list].filter(f => f.type.startsWith('image'));
+    if (newFiles.length === 0) return;
+    files = [...files, ...newFiles];
+    isCompressed = false;
+    btnProcess.disabled = false;
+    render();
+}
+
+function resetQueue() {
+    files = [];
+    results = [];
+    isCompressed = false;
+    totalSavedBytes = 0;
+    btnProcess.disabled = true;
+    bar.style.width = '0%';
+    statusLabel.innerText = "Bulk Engine Ready";
+    document.getElementById('btnZip').classList.add('hidden');
+    document.getElementById('btnSimpleDownload').classList.add('hidden');
+    document.getElementById('dashSaved').innerText = "0.00 MB";
+    document.getElementById('dashAvg').innerText = "0%";
+    render();
+}
+
+function render() {
+    grid.innerHTML = '';
+    
+    if (files.length === 0) {
+        queueHeader.classList.add('hidden');
+        grid.innerHTML = '<div class="p-20 text-center opacity-30 text-slate-500 font-black uppercase tracking-widest text-sm">Workbench Empty. Load folders to shrink.</div>';
+        document.getElementById('dashTotal').innerText = 0;
+        return;
+    }
+
+    queueHeader.classList.remove('hidden');
+    document.getElementById('countTotalUI').innerText = files.length;
+    document.getElementById('dashTotal').innerText = files.length;
+
+    const fragment = document.createDocumentFragment();
+    files.forEach((file, i) => {
+        const div = document.createElement('div');
+        div.className = 'card';
+        
+        const img = document.createElement('img');
+        const url = URL.createObjectURL(file);
+        img.src = url;
+        img.onload = () => { if (window.URL && window.URL.revokeObjectURL) window.URL.revokeObjectURL(url); };
+
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 'filename';
+        nameDiv.textContent = file.name;
+
+        const originalKB = (file.size / 1024).toFixed(0);
+        let statsHtml = `<span class="stats font-bold text-slate-400">${originalKB} KB</span>`;
+
+        if (isCompressed && results[i]) {
+            const res = results[i];
+            const reducedKB = (res.blob.size / 1024).toFixed(0);
+            const savedPerc = ((1 - res.blob.size / file.size) * 100).toFixed(0);
+            statsHtml = `<span class="stats flex-grow text-right"><span class="stats-reduced">${reducedKB} KB (-${savedPerc}%)</span></span>`;
+        }
+
+        div.appendChild(img);
+        div.appendChild(nameDiv);
+        div.insertAdjacentHTML('beforeend', statsHtml);
+        fragment.appendChild(div);
+    });
+    grid.appendChild(fragment);
+}
+
+async function compressAll() {
+    results = new Array(files.length);
+    isCompressed = false;
+    btnProcess.disabled = true;
+    document.getElementById('btnZip').classList.add('hidden');
+    document.getElementById('btnSimpleDownload').classList.add('hidden');
+    totalSavedBytes = 0;
+    statusLabel.innerText = "Shrinking Batch...";
+    
+    const q = parseFloat(qSlider.value);
+    const maxW = parseInt(wInput.value) || 1200;
+    const targetSize = parseInt(targetKBInput.value) || 0;
+    const format = formatSelect.value;
+
+    let completed = 0;
+    const workersLimit = 4;
+    let nextIdx = 0;
+
+    const spawn = () => {
+        if (nextIdx >= files.length) return;
+        const worker = new Worker(workerUrl);
+        const idx = nextIdx++;
+        
+        worker.onmessage = e => {
+            if (e.data.success) {
+                results[e.data.index] = { blob: e.data.blob, name: files[e.data.index].name };
+                totalSavedBytes += (files[e.data.index].size - e.data.blob.size);
+            }
+            completed++;
+            bar.style.width = (completed / files.length * 100) + '%';
+            
+            if (completed === files.length) {
+                isCompressed = true;
+                statusLabel.innerText = "Complete";
+                btnProcess.disabled = false;
+                document.getElementById('btnZip').classList.remove('hidden');
+                document.getElementById('btnSimpleDownload').classList.remove('hidden');
+                render();
+                updateDash();
+            } else {
+                worker.terminate();
+                spawn();
+            }
+        };
+        worker.postMessage({ file: files[idx], q, maxW, index: idx, targetSize, format });
+    };
+
+    for(let i=0; i<Math.min(workersLimit, files.length); i++) spawn();
+}
+
+function updateDash() {
+    const savedMB = (totalSavedBytes / (1024 * 1024)).toFixed(2);
+    document.getElementById('dashSaved').innerText = savedMB + " MB";
+    let totalOriginal = files.reduce((acc, f) => acc + f.size, 0);
+    if (totalOriginal > 0) {
+        const avg = ((totalSavedBytes / totalOriginal) * 100).toFixed(0);
+        document.getElementById('dashAvg').innerText = avg + "%";
+    }
+}
+
+function downloadZip() {
+    const zip = new JSZip();
+    const formatSuffix = formatSelect.value.split('/')[1].replace('jpeg', 'jpg');
+    results.forEach(r => { 
+        if (r && r.blob) {
+            const fileName = r.name.substring(0, r.name.lastIndexOf('.')) || r.name;
+            zip.file("shrinked_" + fileName + "." + formatSuffix, r.blob); 
+        }
+    });
+    zip.generateAsync({ type: 'blob' }).then(content => { saveAs(content, "shrinked_images.zip"); });
+}
+
+function downloadAllSimple() {
+    const formatSuffix = formatSelect.value.split('/')[1].replace('jpeg', 'jpg');
+    results.forEach((r, i) => {
+        if (r && r.blob) {
+            const fileName = r.name.substring(0, r.name.lastIndexOf('.')) || r.name;
+            setTimeout(() => saveAs(r.blob, "shrinked_" + fileName + "." + formatSuffix), i * 300);
+        }
+    });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OptiShrink | 1000+ Bulk Engine</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #020617; color: #f8fafc; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        
+        .stat-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 12px; }
+        
+        .progress-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: conic-gradient(#3b82f6 var(--p, 0%), #1e293b 0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin: 20px auto;
+        }
+        .progress-circle::after {
+            content: "";
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background: #020617;
+            border-radius: 50%;
+        }
+        .progress-text { position: relative; z-index: 10; font-weight: 900; font-size: 20px; }
+
+        .bottom-ui {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #0f172a;
+            border-top: 1px solid #1e293b;
+            padding: 16px;
+            padding-bottom: calc(16px + env(safe-area-inset-bottom));
+        }
+        
+        .btn-action {
+            width: 100%;
+            height: 56px;
+            border-radius: 16px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+        
+        .log-container {
+            height: 100px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 9px;
+            background: #000;
+            padding: 8px;
+            border-radius: 8px;
+            color: #4ade80;
+        }
+        
+        input[type=range] { accent-color: #3b82f6; }
+        select, input[type=number] {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: white;
+            border-radius: 8px;
+            padding: 4px 8px;
+            font-size: 10px;
+            font-weight: bold;
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="p-4 flex justify-between items-center border-b border-slate-800">
+        <div>
+            <h1 class="text-xs font-black uppercase text-blue-500 tracking-tighter">OptiShrink Pro <span class="bg-blue-600 text-white px-1 rounded text-[8px]">1K+ READY</span></h1>
+            <p id="totalCount" class="text-[10px] text-slate-500 font-bold uppercase mt-1">Ready to ingest files</p>
+        </div>
+        <button onclick="location.reload()" class="bg-slate-800 p-2 rounded-lg text-slate-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4L20 20M4 20L20 4"/></svg>
+        </button>
+    </header>
+
+    <main class="flex-grow overflow-y-auto p-4 flex flex-col gap-4 no-scrollbar">
+        <div class="stat-card flex flex-col items-center py-6">
+            <div id="progCirc" class="progress-circle" style="--p: 0%">
+                <div class="progress-text"><span id="pNum">0</span>%</div>
+            </div>
+            <div class="flex gap-4 mt-2">
+                <div class="text-center">
+                    <p class="text-[8px] text-slate-500 uppercase font-black">Processed</p>
+                    <p id="doneCount" class="text-sm font-black">0</p>
+                </div>
+                <div class="w-px h-8 bg-slate-800"></div>
+                <div class="text-center">
+                    <p class="text-[8px] text-slate-500 uppercase font-black">Memory</p>
+                    <p id="memStat" class="text-sm font-black text-emerald-400">Stable</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tool Section -->
+        <div class="grid grid-cols-2 gap-3">
+            <div class="stat-card flex flex-col justify-center">
+                <p class="text-[8px] font-black uppercase text-slate-500 mb-1">Target KB (Max)</p>
+                <input type="number" id="targetKB" placeholder="No limit" class="w-full">
+            </div>
+            <div class="stat-card flex flex-col justify-center">
+                <p class="text-[8px] font-black uppercase text-slate-500 mb-1">Format</p>
+                <select id="exportFormat" class="w-full">
+                    <option value="image/webp">WebP (Best)</option>
+                    <option value="image/jpeg">JPG</option>
+                    <option value="image/png">PNG</option>
+                    <option value="image/gif">GIF</option>
+                    <option value="image/avif">AVIF (Smallest)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <p class="text-[8px] font-black uppercase text-slate-500 mb-2">Engine Activity Log</p>
+            <div id="log" class="log-container">
+                > System initialized...<br>
+                > Waiting for bulk input...
+            </div>
+        </div>
+
+        <input type="file" id="fIn" multiple hidden accept="image/*">
+    </main>
+
+    <div class="bottom-ui space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-1">
+                <div class="flex justify-between text-[8px] font-black uppercase text-slate-500"><span>Quality</span><span id="qVal">70%</span></div>
+                <input type="range" id="qS" class="w-full" min="10" max="95" value="70" oninput="el('qVal').innerText=this.value+'%'">
+            </div>
+            <div class="space-y-1">
+                <div class="flex justify-between text-[8px] font-black uppercase text-slate-500"><span>Target Width</span><span id="wVal">1200px</span></div>
+                <input type="range" id="wS" class="w-full" min="400" max="2500" step="100" value="1200" oninput="el('wVal').innerText=this.value+'px'">
+            </div>
+        </div>
+
+        <button id="btnAdd" onclick="el('fIn').click()" class="btn-action bg-blue-600 text-white">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
+            Add Images (1000+)
+        </button>
+
+        <button id="btnGo" disabled onclick="startExtremeBatch()" class="hidden btn-action bg-orange-500 text-black">
+            Start Batch Process
+        </button>
+
+        <button id="btnDL" class="hidden btn-action bg-emerald-600 text-white" onclick="downloadAll()">
+            Download ZIP Archive
+        </button>
+    </div>
+
+<script>
+let files = [];
+let results = [];
+const el = id => document.getElementById(id);
+
+const log = (msg) => {
+    const l = el('log');
+    l.innerHTML += `> ${msg}<br>`;
+    l.scrollTop = l.scrollHeight;
+};
+
+const workerJS = `
+self.onmessage = async function(e) {
+    const { file, q, maxW, index, targetKB, format } = e.data;
+    try {
+        const bitmap = await createImageBitmap(file);
+        const w = Math.min(bitmap.width, maxW);
+        const h = bitmap.height * (w / bitmap.width);
+        
+        const canvas = new OffscreenCanvas(w, h);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(bitmap, 0, 0, w, h);
+        bitmap.close(); 
+        
+        let currentQ = q;
+        let blob = await canvas.convertToBlob({ type: format, quality: currentQ });
+        
+        // Target KB logic: Iterative reduction if needed
+        if (targetKB > 0 && format !== 'image/png' && format !== 'image/gif') {
+            let attempts = 0;
+            while (blob.size > targetKB * 1024 && attempts < 3 && currentQ > 0.1) {
+                currentQ -= 0.2;
+                if (currentQ < 0.1) currentQ = 0.1;
+                blob = await canvas.convertToBlob({ type: format, quality: currentQ });
+                attempts++;
+            }
+        }
+        
+        self.postMessage({ success: true, blob, index, name: file.name, finalFormat: format });
+    } catch(err) { self.postMessage({ success: false, index }); }
+};`;
+
+const workerUrl = URL.createObjectURL(new Blob([workerJS], {type:'text/javascript'}));
+
+el('fIn').onchange = e => {
+    const incoming = [...e.target.files];
+    if(!incoming.length) return;
+    files = files.concat(incoming);
+    el('totalCount').innerText = `${files.length} Files in Queue`;
+    el('btnAdd').classList.add('hidden');
+    el('btnGo').classList.remove('hidden');
+    el('btnGo').disabled = false;
+    log(`Ingested ${incoming.length} files. Total: ${files.length}`);
+};
+
+async function startExtremeBatch() {
+    el('btnGo').disabled = true;
+    el('btnGo').innerText = "Processing Bulk...";
+    log(`Starting batch of ${files.length} images...`);
+    
+    let done = 0;
+    const total = files.length;
+    const concurrency = 3; 
+    const targetKB = parseFloat(el('targetKB').value) || 0;
+    const format = el('exportFormat').value;
+    
+    const processItem = (idx) => {
+        return new Promise(resolve => {
+            const w = new Worker(workerUrl);
+            w.onmessage = m => {
+                if(m.data.success) {
+                    results[m.data.index] = {blob: m.data.blob, name: m.data.name, format: m.data.finalFormat};
+                }
+                done++;
+                const p = Math.round((done/total)*100);
+                el('progCirc').style.setProperty('--p', p + '%');
+                el('pNum').innerText = p;
+                el('doneCount').innerText = done;
+                if (done % 10 === 0) log(`Completed ${done}/${total}...`);
+                w.terminate();
+                resolve();
+            };
+            w.postMessage({ 
+                file: files[idx], 
+                q: el('qS').value/100, 
+                maxW: el('wS').value, 
+                index: idx,
+                targetKB: targetKB,
+                format: format
+            });
+        });
+    };
+
+    for (let i = 0; i < total; i += concurrency) {
+        const chunk = [];
+        for (let j = 0; j < concurrency && (i + j) < total; j++) {
+            chunk.push(processItem(i + j));
+        }
+        await Promise.all(chunk);
+    }
+
+    log(`Batch Complete! Packaging ZIP...`);
+    el('btnGo').classList.add('hidden');
+    el('btnDL').classList.remove('hidden');
+    el('memStat').innerText = "Success";
+}
+
+async function downloadAll() {
+    log("Building ZIP Archive...");
+    const zip = new JSZip();
+    results.forEach((item) => {
+        if(item && item.blob) {
+            const ext = item.format.split('/')[1].replace('jpeg', 'jpg');
+            const cleanName = item.name.split('.')[0] + "." + ext;
+            zip.file(cleanName, item.blob);
+        }
+    });
+    
+    const content = await zip.generateAsync({type:"blob"});
+    saveAs(content, "bulk_optimized.zip");
+    log("Download triggered.");
+}
+</script>
+</body>
+</html>

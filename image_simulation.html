@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OptiShrink | Image Size Simulator</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', system-ui; background-color: #f1f5f9; color: #1e293b; margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
+    header { background: #0f172a; color: #fff; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-link { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 6px 12px; border-radius: 6px; transition: all 0.2s; color: #94a3b8; }
+    .nav-link:hover { color: #fff; background: rgba(255,255,255,0.05); }
+    .nav-link.active { color: #fff; background: #3b82f6; }
+    .pattern-dots { background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 20px 20px; }
+    input[type=range] { accent-color: #4f46e5; }
+    .loader { border-top-color: #4f46e5; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+    <header class="shrink-0">
+        <div class="flex items-center gap-6">
+            <a href="index.html" class="flex items-center gap-2">
+                <div class="bg-blue-600 p-1.5 rounded-lg shadow-lg">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                </div>
+                <span class="text-sm font-black uppercase tracking-tighter text-white">OptiShrink <span class="text-blue-500">PRO</span></span>
+            </a>
+            <nav class="hidden sm:flex items-center gap-1">
+                <a href="index.html" class="nav-link">Overview</a>
+                <a href="bulk_processor.html" class="nav-link">Bulk Shrinker</a>
+                <a href="image_simulation.html" class="nav-link active">Simulator</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="max-w-6xl mx-auto w-full px-4 md:px-8 py-8 flex-grow">
+        <header class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-transparent border-none p-0">
+            <div>
+                <h1 class="text-3xl font-black text-slate-900 tracking-tight">Image Size Simulator</h1>
+                <p class="text-slate-500 font-medium text-sm">Visualise how shrinking dimensions impacts file weight.</p>
+            </div>
+            <a href="index.html" class="flex items-center gap-2 bg-slate-200 hover:bg-slate-300 text-slate-700 px-6 py-3 rounded-xl shadow-lg active:scale-95 transition">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+    </svg>
+    <span class="font-bold text-sm">Close Simulator</span>
+</a>
+            <label id="uploadBtn" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl cursor-pointer shadow-lg active:scale-95 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                
+                <span class="font-bold text-sm">Upload Test Photo</span>
+                <input type="file" id="fileInput" class="hidden" accept="image/*">
+            </label>
+        </header>
+
+        <div id="emptyState" class="border-2 border-dashed border-slate-300 rounded-3xl p-32 flex flex-col items-center justify-center bg-white text-slate-400">
+            <p class="text-lg font-bold">Upload an image to see the shrinking magic.</p>
+        </div>
+
+        <div id="mainUI" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-8 pb-20">
+            <div class="lg:col-span-4 space-y-6">
+                <section class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <h2 class="text-xs font-black text-indigo-900 uppercase mb-6">Shrink Settings</h2>
+                    <div class="space-y-4 mb-10">
+                        <div class="flex justify-between"><label class="text-sm font-bold">New Width</label><span id="wLabel" class="text-indigo-600 font-bold">800px</span></div>
+                        <input type="range" id="widthSlider" min="100" class="w-full">
+                    </div>
+                    <div class="space-y-4 mb-10">
+                        <div class="flex justify-between"><label class="text-sm font-bold">Quality (%)</label><span id="qLabel" class="text-indigo-600 font-bold">80%</span></div>
+                        <input type="range" id="qualitySlider" min="1" max="100" value="80" class="w-full">
+                    </div>
+                </section>
+
+                <section class="bg-indigo-900 text-white p-6 rounded-3xl shadow-xl">
+                    <p class="text-[10px] text-indigo-400 uppercase mb-4 tracking-widest">Weight Comparison</p>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><p class="text-[10px] text-indigo-400">Before</p><p id="origSize" class="text-lg font-bold">0 KB</p></div>
+                        <div><p class="text-[10px] text-indigo-400">After Shrink</p><p id="optSize" class="text-lg font-bold text-emerald-400">0 KB</p></div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-indigo-800">
+                        <p id="reduction" class="text-4xl font-black text-white">0%</p>
+                        <p class="text-[10px] text-indigo-400 uppercase">Space Saved</p>
+                    </div>
+                </section>
+                <button onclick="location.reload()" class="w-full py-3 text-slate-400 text-xs font-bold uppercase">Reset Simulation</button>
+            </div>
+
+            <div class="lg:col-span-8">
+                <div class="bg-white p-2 rounded-2xl border border-slate-200 shadow-sm min-h-[500px] flex flex-col">
+                    <div class="flex items-center justify-between p-4 border-b">
+                        <span id="previewDetails" class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Previewing New Size</span>
+                        <a id="downloadBtn" href="#" download="shrinked_test.jpg" class="bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-black shadow-lg shadow-emerald-500/20">Download Test</a>
+                    </div>
+                    <div class="flex-1 bg-slate-100 rounded-xl relative flex items-center justify-center p-8 pattern-dots overflow-auto">
+                        <div id="simLoader" class="hidden absolute inset-0 bg-white/60 z-20 flex flex-col items-center justify-center">
+                            <div class="loader w-8 h-8 border-4 border-indigo-500 rounded-full"></div>
+                        </div>
+                        <img id="previewImg" class="max-w-full h-auto shadow-2xl rounded-lg">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let originalImage = null, originalFile = null, debounceTimer = null;
+        const ui = {
+            fileInput: document.getElementById('fileInput'),
+            widthSlider: document.getElementById('widthSlider'),
+            qualitySlider: document.getElementById('qualitySlider'),
+            wLabel: document.getElementById('wLabel'),
+            qLabel: document.getElementById('qLabel'),
+            previewImg: document.getElementById('previewImg'),
+            origSize: document.getElementById('origSize'),
+            optSize: document.getElementById('optSize'),
+            reduction: document.getElementById('reduction'),
+            previewDetails: document.getElementById('previewDetails'),
+            downloadBtn: document.getElementById('downloadBtn'),
+            simLoader: document.getElementById('simLoader')
+        };
+
+        ui.fileInput.onchange = e => {
+            const file = e.target.files[0];
+            if (!file) return;
+            originalFile = file;
+            const reader = new FileReader();
+            reader.onload = ev => {
+                const img = new Image();
+                img.onload = () => { originalImage = img; setupUI(file, img); };
+                img.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+        };
+
+        function setupUI(file, img) {
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('mainUI').classList.remove('hidden');
+            ui.widthSlider.max = img.width;
+            ui.widthSlider.value = Math.min(img.width, 1200);
+            ui.origSize.innerText = (file.size / 1024).toFixed(1) + ' KB';
+            updateSim();
+        }
+
+        ui.widthSlider.oninput = () => { ui.wLabel.innerText = ui.widthSlider.value + 'px'; triggerSim(); };
+        ui.qualitySlider.oninput = () => { ui.qLabel.innerText = ui.qualitySlider.value + '%'; triggerSim(); };
+
+        function triggerSim() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(updateSim, 150);
+        }
+
+        async function updateSim() {
+            if (!originalImage) return;
+            ui.simLoader.classList.remove('hidden');
+            const canvas = document.createElement('canvas');
+            const targetW = parseInt(ui.widthSlider.value);
+            const targetH = Math.round(originalImage.height * (targetW / originalImage.width));
+            canvas.width = targetW; canvas.height = targetH;
+            canvas.getContext('2d').drawImage(originalImage, 0, 0, targetW, targetH);
+            canvas.toBlob(blob => {
+                const url = URL.createObjectURL(blob);
+                ui.previewImg.src = url;
+                ui.downloadBtn.href = url;
+                ui.optSize.innerText = (blob.size / 1024).toFixed(1) + ' KB';
+                ui.reduction.innerText = Math.round((1 - (blob.size / originalFile.size)) * 100) + '%';
+                ui.simLoader.classList.add('hidden');
+            }, 'image/jpeg', parseInt(ui.qualitySlider.value) / 100);
+        }
+    </script>
+</body>
+</html>
