@@ -1,125 +1,302 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OptiShrink | Image Size Simulator</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
-    body { font-family: 'Plus Jakarta Sans', system-ui; background-color: #f1f5f9; color: #1e293b; margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
-    header { background: #0f172a; color: #fff; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; }
-    .nav-link { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 6px 12px; border-radius: 6px; transition: all 0.2s; color: #94a3b8; }
-    .nav-link:hover { color: #fff; background: rgba(255,255,255,0.05); }
-    .nav-link.active { color: #fff; background: #3b82f6; }
-    .pattern-dots { background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 20px 20px; }
-    input[type=range] { accent-color: #4f46e5; }
-    .loader { border-top-color: #4f46e5; animation: spin 1s linear infinite; }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-</style>
-</head>
-<body>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>BulkPix | Image Size Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+        
+        body { 
+            font-family: 'Plus Jakarta Sans', system-ui; 
+            background-color: #f8fafc; 
+            color: #1e293b; 
+            margin: 0; 
+            height: 100vh;
+            height: 100dvh;
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+        }
 
-    <header class="shrink-0">
-        <div class="flex items-center gap-6">
-            <a href="index.html" class="flex items-center gap-2">
-                <div class="bg-blue-600 p-1.5 rounded-lg shadow-lg">
-                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        /* Neon Tagline Animations */
+        .neon-tagline { display: flex; flex-direction: column; align-items: center; gap: 2px; margin-top: 2px; }
+        .blue-strip-mini { width: 100%; height: 1px; background: #00d2ff; box-shadow: 0 0 5px #00d2ff; position: relative; overflow: hidden; }
+        .blue-strip-mini::after { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, #fff, transparent); animation: fast-move-mini 1.2s infinite linear; }
+        @keyframes fast-move-mini { 0% { left: -100%; } 100% { left: 150%; } }
+        .neon-text-mini { font-size: 7px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #e0faff; text-shadow: 0 0 3px #00d2ff; white-space: nowrap; }
+        .fast-mini { animation: pulse-mini 2s infinite ease-in-out; }
+        @keyframes pulse-mini { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+        .pattern-dots { 
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px); 
+            background-size: 10px 10px; 
+        }
+
+        input[type=range] { 
+            accent-color: #3b82f6; 
+            height: 4px;
+            -webkit-appearance: none;
+            background: #e2e8f0;
+            border-radius: 10px;
+            width: 100%;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border: 2px solid white;
+        }
+
+        .loader { border-top-color: #3b82f6; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .compact-input {
+            @apply bg-slate-50 border border-slate-200 text-slate-900 rounded px-1.5 py-1 text-[10px] font-bold focus:outline-none focus:ring-1 focus:ring-blue-500 w-full appearance-none;
+        }
+
+        @media (max-width: 1023px) {
+            .preview-container { height: 55vh; }
+            #mainUI { padding-bottom: calc(0.5rem + env(safe-area-inset-bottom)); flex-shrink: 0; }
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .stat-label { display: inline-block; width: 55px; text-align: center; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+        
+        #scrollContainer {
+            position: absolute;
+            inset: 0;
+            overflow: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #previewWrapper {
+            padding: 100px;
+            min-height: 100%;
+            min-width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #zoomTarget {
+            margin: auto;
+            transform-origin: center center;
+            transition: transform 0.2s ease-out;
+            will-change: transform;
+        }
+
+        /* Floating Zoom Control UI */
+        .zoom-controls-floating {
+            position: absolute;
+            bottom: 1rem;
+            right: 1rem;
+            z-index: 40;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .zoom-fab {
+            @apply bg-white/90 backdrop-blur border border-slate-200 text-slate-600 w-10 h-10 rounded-full shadow-lg flex items-center justify-center active:scale-90 transition-all hover:bg-white hover:text-blue-500;
+        }
+    </style>
+</head>
+<body class="flex flex-col">
+
+    <!-- Header -->
+    <header class="shrink-0 bg-[#0f172a] border-b border-slate-800 px-2 py-2 flex items-center justify-between z-50 shadow-md">
+        <div class="flex items-center gap-1.5 sm:gap-4">
+            <div class="flex flex-col items-center">
+                <a href="index.html" class="flex items-center gap-1.5">
+                    <div class="bg-blue-600 p-1 rounded-lg shadow-lg">
+                        <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    </div>
+                    <span class="text-[10px] sm:text-[11px] font-black uppercase tracking-tighter text-white">BulkPix</span>
+                </a>
+                <div class="neon-tagline hidden xs:flex">
+                    <div class="blue-strip-mini"></div>
                 </div>
-                <span class="text-sm font-black uppercase tracking-tighter text-white">OptiShrink <span class="text-blue-500">PRO</span></span>
+            </div>
+            
+            <div id="headerStats" class="hidden flex items-center gap-1.5 sm:gap-4 border-l border-slate-800 pl-1.5 sm:pl-4">
+                <div class="flex flex-col">
+                    <span class="hidden sm:block text-[6px] text-slate-500 uppercase font-black">Original</span>
+                    <span id="origSize" class="text-[9px] font-bold text-slate-400">0 KB</span>
+                </div>
+                <div class="flex flex-col">
+                    <span class="hidden sm:block text-[6px] text-emerald-500 uppercase font-black">Opt</span>
+                    <span id="optSize" class="text-[9px] font-bold text-emerald-400">0 KB</span>
+                </div>
+                <div class="bg-blue-900/30 px-1.5 py-0.5 rounded border border-blue-800/50 text-[8px] font-black text-blue-400">
+                    <span id="reduction">0%</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-1.5">
+            <button id="clearBtn" class="hidden bg-slate-800 hover:bg-red-500 text-slate-400 hover:text-white p-1.5 rounded-lg transition-all" title="Clear Screen">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+
+            <a id="downloadBtn" href="#" download="optimized.webp" class="hidden bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg transition flex items-center gap-1 active:scale-95">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                <span class="hidden sm:inline">Save Image</span>
+                <span class="sm:hidden">Save</span>
             </a>
-            <nav class="hidden sm:flex items-center gap-1">
-                <a href="index.html" class="nav-link">Overview</a>
-                <a href="bulk_processor.html" class="nav-link">Bulk Shrinker</a>
-                <a href="image_simulation.html" class="nav-link active">Simulator</a>
-            </nav>
+
+            <label id="headerUpload" class="bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1.5 rounded-xl cursor-pointer transition text-[9px] font-black uppercase flex items-center gap-1.5 shadow-lg">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                <span class="hidden xs:inline">Upload</span>
+                <input type="file" id="fileInput" class="hidden" accept="image/*">
+            </label>
         </div>
     </header>
 
-    <div class="max-w-6xl mx-auto w-full px-4 md:px-8 py-8 flex-grow">
-        <header class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-transparent border-none p-0">
-            <div>
-                <h1 class="text-3xl font-black text-slate-900 tracking-tight">Image Size Simulator</h1>
-                <p class="text-slate-500 font-medium text-sm">Visualise how shrinking dimensions impacts file weight.</p>
-            </div>
-            <a href="index.html" class="flex items-center gap-2 bg-slate-200 hover:bg-slate-300 text-slate-700 px-6 py-3 rounded-xl shadow-lg active:scale-95 transition">
-    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-    </svg>
-    <span class="font-bold text-sm">Close Simulator</span>
-</a>
-            <label id="uploadBtn" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl cursor-pointer shadow-lg active:scale-95 transition">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-                
-                <span class="font-bold text-sm">Upload Test Photo</span>
-                <input type="file" id="fileInput" class="hidden" accept="image/*">
+    <main class="flex-grow flex flex-col lg:flex-row relative overflow-hidden bg-slate-50">
+        
+        <!-- Empty State: Interactive Upload Card -->
+        <div id="emptyState" class="absolute inset-0 z-40 bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
+            <label for="fileInput" class="group cursor-pointer">
+                <div class="bg-white p-12 sm:p-20 rounded-[3rem] shadow-2xl border border-slate-100 transition-all duration-500 hover:shadow-[0_20px_50px_rgba(59,130,246,0.15)] hover:scale-[1.02] flex flex-col items-center max-w-md relative overflow-hidden">
+                    <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-500/5 blur-3xl rounded-full"></div>
+                    
+                    <div class="bg-blue-600 p-6 rounded-[1.5rem] shadow-lg mb-8 text-white group-hover:scale-110 transition-transform duration-500">
+                        <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                    </div>
+                    
+                    <h2 class="text-2xl font-black text-slate-900 uppercase tracking-tight">Simulator Lab</h2>
+                    <p class="text-slate-400 text-[10px] mt-2 uppercase font-black tracking-[0.2em]">Ready to optimize your media?</p>
+                    
+                    <div class="mt-10 flex flex-col items-center gap-4">
+                        <span class="bg-blue-600 text-white px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-blue-600/20 group-hover:bg-blue-700 transition-colors">
+                            Select Photo
+                        </span>
+                        <p class="text-slate-300 text-[9px] font-bold uppercase tracking-widest hidden sm:block">or drag & drop here</p>
+                    </div>
+                </div>
             </label>
-        </header>
-
-        <div id="emptyState" class="border-2 border-dashed border-slate-300 rounded-3xl p-32 flex flex-col items-center justify-center bg-white text-slate-400">
-            <p class="text-lg font-bold">Upload an image to see the shrinking magic.</p>
         </div>
 
-        <div id="mainUI" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-8 pb-20">
-            <div class="lg:col-span-4 space-y-6">
-                <section class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                    <h2 class="text-xs font-black text-indigo-900 uppercase mb-6">Shrink Settings</h2>
-                    <div class="space-y-4 mb-10">
-                        <div class="flex justify-between"><label class="text-sm font-bold">New Width</label><span id="wLabel" class="text-indigo-600 font-bold">800px</span></div>
-                        <input type="range" id="widthSlider" min="100" class="w-full">
+        <!-- Tool Sidebar -->
+        <aside id="mainUI" class="hidden shrink-0 w-full lg:w-64 bg-white border-t lg:border-t-0 lg:border-r border-slate-200 p-3 lg:p-6 order-last lg:order-first z-30 overflow-y-auto no-scrollbar">
+            <div class="flex flex-col gap-4">
+                
+                <!-- Simplified Row: Format and Reset -->
+                <div class="grid grid-cols-[1fr_32px] gap-2 items-end shrink-0 w-full">
+                    <div class="min-w-0">
+                        <label class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Export Format</label>
+                        <select id="formatSelect" class="compact-input">
+                            <option value="image/webp" selected>WEBP</option>
+                            <option value="image/jpeg">JPG</option>
+                            <option value="image/png">PNG</option>
+                        </select>
                     </div>
-                    <div class="space-y-4 mb-10">
-                        <div class="flex justify-between"><label class="text-sm font-bold">Quality (%)</label><span id="qLabel" class="text-indigo-600 font-bold">80%</span></div>
-                        <input type="range" id="qualitySlider" min="1" max="100" value="80" class="w-full">
-                    </div>
-                </section>
+                    <button id="resetSimBtnIcon" class="bg-slate-50 hover:bg-blue-600 text-slate-400 hover:text-white h-[26px] w-8 flex shrink-0 items-center justify-center rounded-lg transition-colors border border-slate-200" title="Reset Simulation">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    </button>
+                </div>
 
-                <section class="bg-indigo-900 text-white p-6 rounded-3xl shadow-xl">
-                    <p class="text-[10px] text-indigo-400 uppercase mb-4 tracking-widest">Weight Comparison</p>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div><p class="text-[10px] text-indigo-400">Before</p><p id="origSize" class="text-lg font-bold">0 KB</p></div>
-                        <div><p class="text-[10px] text-indigo-400">After Shrink</p><p id="optSize" class="text-lg font-bold text-emerald-400">0 KB</p></div>
-                    </div>
-                    <div class="mt-4 pt-4 border-t border-indigo-800">
-                        <p id="reduction" class="text-4xl font-black text-white">0%</p>
-                        <p class="text-[10px] text-indigo-400 uppercase">Space Saved</p>
-                    </div>
-                </section>
-                <button onclick="location.reload()" class="w-full py-3 text-slate-400 text-xs font-bold uppercase">Reset Simulation</button>
-            </div>
-
-            <div class="lg:col-span-8">
-                <div class="bg-white p-2 rounded-2xl border border-slate-200 shadow-sm min-h-[500px] flex flex-col">
-                    <div class="flex items-center justify-between p-4 border-b">
-                        <span id="previewDetails" class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Previewing New Size</span>
-                        <a id="downloadBtn" href="#" download="shrinked_test.jpg" class="bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-black shadow-lg shadow-emerald-500/20">Download Test</a>
-                    </div>
-                    <div class="flex-1 bg-slate-100 rounded-xl relative flex items-center justify-center p-8 pattern-dots overflow-auto">
-                        <div id="simLoader" class="hidden absolute inset-0 bg-white/60 z-20 flex flex-col items-center justify-center">
-                            <div class="loader w-8 h-8 border-4 border-indigo-500 rounded-full"></div>
+                <!-- Sliders Section -->
+                <div class="space-y-5 pt-1 border-t border-slate-50">
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between items-center text-[8px] font-black uppercase tracking-tight">
+                            <span class="text-slate-400">Target Width</span>
+                            <span id="wLabel" class="stat-label text-blue-600 bg-blue-50 px-1.5 rounded">0px</span>
                         </div>
-                        <img id="previewImg" class="max-w-full h-auto shadow-2xl rounded-lg">
+                        <input type="range" id="widthSlider" min="100">
+                    </div>
+
+                    <div id="qualitySection" class="space-y-1.5">
+                        <div class="flex justify-between items-center text-[8px] font-black uppercase tracking-tight">
+                            <span class="text-slate-400">Quality</span>
+                            <span id="qLabel" class="stat-label text-blue-600 bg-blue-50 px-1.5 rounded">80%</span>
+                        </div>
+                        <input type="range" id="qualitySlider" min="1" max="100" value="80">
+                    </div>
+
+                    <div class="pt-2 hidden lg:block">
+                        <button id="resetSimBtnDesktop" class="w-full py-2 bg-slate-50 hover:bg-blue-600 text-slate-400 hover:text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-all border border-slate-200 flex items-center justify-center gap-2">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                            <span>Reset Simulation</span>
+                        </button>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
+        </aside>
+
+        <!-- Preview Area -->
+        <section class="flex-1 relative overflow-hidden bg-slate-100 pattern-dots">
+            <div id="simLoader" class="hidden absolute inset-0 bg-white/30 backdrop-blur-[1px] z-20 flex items-center justify-center pointer-events-none transition-opacity duration-200">
+                <div class="loader w-10 h-10 border-4 border-blue-600 rounded-full"></div>
+            </div>
+            
+            <div class="absolute inset-0 overflow-auto no-scrollbar touch-none scroll-smooth" id="scrollContainer">
+                <div id="previewWrapper">
+                    <div class="relative inline-block text-center" id="zoomTarget">
+                        <img id="previewImg" class="max-w-full h-auto shadow-2xl rounded-xl border-4 border-white bg-white pointer-events-none user-select-none transition-opacity duration-300">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Functional Zoom Controls (FAB) -->
+            <div id="zoomControls" class="hidden flex flex-col gap-2 absolute bottom-4 right-4 z-30">
+                <button id="btnZoomIn" class="zoom-fab" title="Zoom In">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                </button>
+                <button id="btnZoomOut" class="zoom-fab" title="Zoom Out">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M18 12H6"/></svg>
+                </button>
+                <div class="bg-white/90 backdrop-blur border border-slate-200 px-2 py-1 rounded-full text-[9px] font-black text-blue-500 text-center shadow-sm">
+                    <span id="zLabel">100%</span>
+                </div>
+            </div>
+        </section>
+    </main>
 
     <script>
         let originalImage = null, originalFile = null, debounceTimer = null;
+        let currentMime = 'image/webp';
+        let currentZoom = 100;
+        let initialDist = 0, baseZoom = 100;
+
         const ui = {
             fileInput: document.getElementById('fileInput'),
             widthSlider: document.getElementById('widthSlider'),
             qualitySlider: document.getElementById('qualitySlider'),
+            formatSelect: document.getElementById('formatSelect'),
             wLabel: document.getElementById('wLabel'),
             qLabel: document.getElementById('qLabel'),
+            zLabel: document.getElementById('zLabel'),
             previewImg: document.getElementById('previewImg'),
+            zoomTarget: document.getElementById('zoomTarget'),
+            scrollContainer: document.getElementById('scrollContainer'),
             origSize: document.getElementById('origSize'),
             optSize: document.getElementById('optSize'),
             reduction: document.getElementById('reduction'),
-            previewDetails: document.getElementById('previewDetails'),
             downloadBtn: document.getElementById('downloadBtn'),
-            simLoader: document.getElementById('simLoader')
+            clearBtn: document.getElementById('clearBtn'),
+            resetSimBtnIcon: document.getElementById('resetSimBtnIcon'),
+            resetSimBtnDesktop: document.getElementById('resetSimBtnDesktop'),
+            simLoader: document.getElementById('simLoader'),
+            emptyState: document.getElementById('emptyState'),
+            mainUI: document.getElementById('mainUI'),
+            headerUpload: document.getElementById('headerUpload'),
+            headerStats: document.getElementById('headerStats'),
+            qualitySection: document.getElementById('qualitySection'),
+            zoomControls: document.getElementById('zoomControls'),
+            btnZoomIn: document.getElementById('btnZoomIn'),
+            btnZoomOut: document.getElementById('btnZoomOut')
         };
 
         ui.fileInput.onchange = e => {
@@ -135,39 +312,162 @@
             reader.readAsDataURL(file);
         };
 
+        ui.formatSelect.onchange = () => {
+            currentMime = ui.formatSelect.value;
+            toggleQualityUI();
+            updateDownloadExt();
+            triggerSim();
+        };
+
+        function toggleQualityUI() {
+            if (currentMime === 'image/png') {
+                ui.qualitySection.style.opacity = '0.3';
+                ui.qualitySection.style.pointerEvents = 'none';
+            } else {
+                ui.qualitySection.style.opacity = '1';
+                ui.qualitySection.style.pointerEvents = 'auto';
+            }
+        }
+
+        function updateDownloadExt() {
+            const extMap = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+            const ext = extMap[currentMime] || 'webp';
+            ui.downloadBtn.setAttribute('download', `BulkPix_Sim_${Date.now()}.${ext}`);
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024, sizes = ['B', 'KB', 'MB'], i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
         function setupUI(file, img) {
-            document.getElementById('emptyState').classList.add('hidden');
-            document.getElementById('mainUI').classList.remove('hidden');
+            ui.emptyState.classList.add('hidden');
+            ui.mainUI.classList.remove('hidden');
+            ui.headerStats.classList.remove('hidden');
+            ui.headerStats.classList.add('flex');
+            ui.headerUpload.classList.add('hidden'); 
+            ui.downloadBtn.classList.remove('hidden');
+            ui.downloadBtn.classList.add('flex');
+            ui.clearBtn.classList.remove('hidden');
+            ui.zoomControls.classList.remove('hidden');
+
             ui.widthSlider.max = img.width;
             ui.widthSlider.value = Math.min(img.width, 1200);
-            ui.origSize.innerText = (file.size / 1024).toFixed(1) + ' KB';
-            updateSim();
+            ui.wLabel.innerText = ui.widthSlider.value + 'px';
+            ui.origSize.innerText = formatBytes(file.size);
+            
+            currentZoom = 100;
+            updateZoomUI();
+            triggerSim();
+            
+            setTimeout(() => {
+                ui.scrollContainer.scrollLeft = (ui.scrollContainer.scrollWidth - ui.scrollContainer.clientWidth) / 2;
+                ui.scrollContainer.scrollTop = (ui.scrollContainer.scrollHeight - ui.scrollContainer.clientHeight) / 2;
+            }, 100);
         }
+
+        function updateZoomUI() {
+            currentZoom = Math.min(Math.max(currentZoom, 50), 400);
+            if(ui.zLabel) ui.zLabel.innerText = Math.round(currentZoom) + '%';
+            ui.zoomTarget.style.transform = `scale(${currentZoom / 100})`;
+        }
+
+        ui.btnZoomIn.onclick = () => { currentZoom += 25; updateZoomUI(); };
+        ui.btnZoomOut.onclick = () => { currentZoom -= 25; updateZoomUI(); };
+
+        // Pinch Zoom Logic (Mobile)
+        ui.scrollContainer.addEventListener('touchstart', e => {
+            if (e.targetTouches.length === 2) {
+                initialDist = Math.hypot(
+                    e.targetTouches[0].pageX - e.targetTouches[1].pageX,
+                    e.targetTouches[0].pageY - e.targetTouches[1].pageY
+                );
+                baseZoom = currentZoom;
+            }
+        }, { passive: true });
+
+        ui.scrollContainer.addEventListener('touchmove', e => {
+            if (e.targetTouches.length === 2) {
+                const currentDist = Math.hypot(
+                    e.targetTouches[0].pageX - e.targetTouches[1].pageX,
+                    e.targetTouches[0].pageY - e.targetTouches[1].pageY
+                );
+                currentZoom = baseZoom * (currentDist / initialDist);
+                updateZoomUI();
+            }
+        }, { passive: true });
+
+        const handleReset = () => {
+            if (!originalImage) return;
+            ui.widthSlider.value = Math.min(originalImage.width, 1200);
+            ui.qualitySlider.value = 80;
+            ui.formatSelect.value = 'image/webp';
+            currentMime = 'image/webp';
+            currentZoom = 100;
+            ui.wLabel.innerText = ui.widthSlider.value + 'px';
+            ui.qLabel.innerText = '80%';
+            updateZoomUI();
+            toggleQualityUI();
+            updateDownloadExt();
+            triggerSim();
+            ui.scrollContainer.scrollLeft = (ui.scrollContainer.scrollWidth - ui.scrollContainer.clientWidth) / 2;
+            ui.scrollContainer.scrollTop = (ui.scrollContainer.scrollHeight - ui.scrollContainer.clientHeight) / 2;
+        };
+
+        ui.resetSimBtnIcon.onclick = handleReset;
+        ui.resetSimBtnDesktop.onclick = handleReset;
+
+        ui.clearBtn.onclick = () => {
+            originalImage = null; originalFile = null;
+            ui.fileInput.value = ''; ui.previewImg.src = '';
+            ui.emptyState.classList.remove('hidden');
+            ui.mainUI.classList.add('hidden');
+            ui.headerStats.classList.add('hidden');
+            ui.headerUpload.classList.remove('hidden');
+            ui.downloadBtn.classList.add('hidden');
+            ui.clearBtn.classList.add('hidden');
+            ui.zoomControls.classList.add('hidden');
+        };
 
         ui.widthSlider.oninput = () => { ui.wLabel.innerText = ui.widthSlider.value + 'px'; triggerSim(); };
         ui.qualitySlider.oninput = () => { ui.qLabel.innerText = ui.qualitySlider.value + '%'; triggerSim(); };
 
-        function triggerSim() {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(updateSim, 150);
-        }
-
         async function updateSim() {
             if (!originalImage) return;
-            ui.simLoader.classList.remove('hidden');
+            
             const canvas = document.createElement('canvas');
             const targetW = parseInt(ui.widthSlider.value);
             const targetH = Math.round(originalImage.height * (targetW / originalImage.width));
             canvas.width = targetW; canvas.height = targetH;
-            canvas.getContext('2d').drawImage(originalImage, 0, 0, targetW, targetH);
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(originalImage, 0, 0, targetW, targetH);
+            
+            const finalQuality = parseInt(ui.qualitySlider.value) / 100;
+            
             canvas.toBlob(blob => {
-                const url = URL.createObjectURL(blob);
-                ui.previewImg.src = url;
-                ui.downloadBtn.href = url;
-                ui.optSize.innerText = (blob.size / 1024).toFixed(1) + ' KB';
-                ui.reduction.innerText = Math.round((1 - (blob.size / originalFile.size)) * 100) + '%';
-                ui.simLoader.classList.add('hidden');
-            }, 'image/jpeg', parseInt(ui.qualitySlider.value) / 100);
+                if (blob) {
+                    const url = URL.createObjectURL(blob);
+                    // Pre-load logic to prevent white flash
+                    const imgPreloader = new Image();
+                    imgPreloader.onload = () => {
+                        if (ui.previewImg.src.startsWith('blob:')) URL.revokeObjectURL(ui.previewImg.src);
+                        ui.previewImg.src = url;
+                        ui.downloadBtn.href = url;
+                        ui.optSize.innerText = formatBytes(blob.size);
+                        ui.reduction.innerText = Math.max(0, Math.round((1 - (blob.size / originalFile.size)) * 100)) + '%';
+                        ui.simLoader.classList.add('hidden');
+                    };
+                    imgPreloader.src = url;
+                }
+            }, currentMime, finalQuality);
+        }
+
+        function triggerSim() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(updateSim, 50);
         }
     </script>
 </body>
