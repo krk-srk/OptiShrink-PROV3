@@ -17,17 +17,16 @@
             height: 100dvh;
             display: flex; 
             flex-direction: column; 
-            overflow: hidden; 
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
 
         /* Neon Tagline Animations */
         .neon-tagline { display: flex; flex-direction: column; align-items: center; gap: 2px; margin-top: 2px; }
-        .blue-strip-mini { width: 100%; height: 1px; background: #00d2ff; box-shadow: 0 0 5px #00d2ff; position: relative; overflow: hidden; }
+        .blue-strip-mini { width: 100%; height: 1px; background: #3b82f6; box-shadow: 0 0 5px #3b82f6; position: relative; overflow: hidden; }
         .blue-strip-mini::after { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, #fff, transparent); animation: fast-move-mini 1.2s infinite linear; }
         @keyframes fast-move-mini { 0% { left: -100%; } 100% { left: 150%; } }
-        .neon-text-mini { font-size: 7px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #e0faff; text-shadow: 0 0 3px #00d2ff; white-space: nowrap; }
-        .fast-mini { animation: pulse-mini 2s infinite ease-in-out; }
-        @keyframes pulse-mini { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        .neon-text-mini { font-size: 7px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #1e293b; white-space: nowrap; }
 
         .pattern-dots { 
             background-image: radial-gradient(#cbd5e1 1px, transparent 1px); 
@@ -54,16 +53,20 @@
             border: 2px solid white;
         }
 
-        .loader { border-top-color: #3b82f6; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
         .compact-input {
             @apply bg-slate-50 border border-slate-200 text-slate-900 rounded px-1.5 py-1 text-[10px] font-bold focus:outline-none focus:ring-1 focus:ring-blue-500 w-full appearance-none;
         }
 
+        /* SPACE OPTIMIZATION */
         @media (max-width: 1023px) {
-            .preview-container { height: 55vh; }
-            #mainUI { padding-bottom: calc(0.5rem + env(safe-area-inset-bottom)); flex-shrink: 0; }
+            #viewport { flex: 1; min-height: 0; } 
+            #mainUI { 
+                flex: none; 
+                height: auto; 
+                padding: 0.5rem 0.75rem calc(0.5rem + env(safe-area-inset-bottom)) 0.75rem;
+                background: white;
+                box-shadow: 0 -10px 25px rgba(0,0,0,0.05);
+            }
         }
 
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -71,44 +74,64 @@
 
         .stat-label { display: inline-block; width: 55px; text-align: center; font-variant-numeric: tabular-nums; flex-shrink: 0; }
         
-        #scrollContainer {
-            position: absolute;
-            inset: 0;
-            overflow: auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        #viewport {
+            position: relative;
+            flex: 1;
+            overflow: hidden;
+            background: #f1f5f9;
+            cursor: grab;
+            touch-action: none;
+            outline: none;
         }
 
-        #previewWrapper {
-            padding: 100px;
-            min-height: 100%;
-            min-width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
+        #viewport:active { cursor: grabbing; }
+
         #zoomTarget {
-            margin: auto;
-            transform-origin: center center;
-            transition: transform 0.2s ease-out;
-            will-change: transform;
-        }
-
-        /* Floating Zoom Control UI */
-        .zoom-controls-floating {
             position: absolute;
-            bottom: 1rem;
-            right: 1rem;
-            z-index: 40;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
+            transform-origin: 0 0;
+            will-change: transform;
+            display: inline-block;
+            user-select: none;
         }
 
-        .zoom-fab {
-            @apply bg-white/90 backdrop-blur border border-slate-200 text-slate-600 w-10 h-10 rounded-full shadow-lg flex items-center justify-center active:scale-90 transition-all hover:bg-white hover:text-blue-500;
+        /* Comparison Slider Styles */
+        .comp-container { position: relative; display: inline-block; overflow: hidden; border-radius: 12px; border: 4px solid white; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); background: white; pointer-events: none; }
+        .comp-after { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; clip-path: inset(0 0 0 50%); z-index: 5; }
+        .comp-slider { 
+            position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: white; z-index: 20; box-shadow: 0 0 10px rgba(0,0,0,0.3); 
+            cursor: ew-resize;
+            pointer-events: auto;
+            outline: none;
+        }
+        .comp-slider::after { 
+            content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            width: 40px; height: 40px; background: white; border-radius: 50%; border: 2px solid #3b82f6; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%233b82f6'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5' d='M7 16l-4-4m0 0l4-4m-4 4h18m-4 4l4-4m0 0l-4-4'/%3E%3C/svg%3E"); 
+            background-size: 18px; background-repeat: no-repeat; background-position: center; 
+        }
+
+        .floating-btn { @apply bg-white/90 backdrop-blur border border-slate-200 text-slate-600 w-10 h-10 rounded-full shadow-lg flex items-center justify-center active:scale-90 transition-all hover:bg-white hover:text-blue-500; outline: none; }
+        .zoom-controls-floating { position: absolute; bottom: 1rem; right: 1rem; z-index: 40; display: flex; flex-direction: column; gap: 0.5rem; }
+        .compare-control-floating { position: absolute; top: 1rem; left: 1rem; z-index: 40; }
+        
+        @keyframes icon-flip {
+            0% { transform: rotateY(0deg); }
+            15% { transform: rotateY(180deg); }
+            30%, 100% { transform: rotateY(360deg); }
+        }
+        .flip-anim { animation: icon-flip 4s infinite ease-in-out; perspective: 1000px; }
+        
+        .active-compare { @apply bg-blue-600 text-white border-blue-600 shadow-blue-500/30; }
+        .active-compare .flip-anim { animation: none; }
+
+        .loader-minimal { width: 32px; height: 32px; border: 3px solid rgba(59, 130, 246, 0.1); border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Label styling */
+        .comp-label {
+            position: absolute; top: 1rem; padding: 4px 10px; border-radius: 20px; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
+            background: rgba(255,255,255,0.8); backdrop-filter: blur(4px); pointer-events: none; z-index: 25; border: 1px solid rgba(0,0,0,0.05);
         }
     </style>
 </head>
@@ -129,17 +152,22 @@
                 </div>
             </div>
             
-            <div id="headerStats" class="hidden flex items-center gap-1.5 sm:gap-4 border-l border-slate-800 pl-1.5 sm:pl-4">
-                <div class="flex flex-col">
-                    <span class="hidden sm:block text-[6px] text-slate-500 uppercase font-black">Original</span>
-                    <span id="origSize" class="text-[9px] font-bold text-slate-400">0 KB</span>
+            <div id="headerStats" class="hidden flex items-center gap-1.5 sm:gap-4 border-l border-slate-800 pl-1.5 sm:pl-4 text-white">
+                <div class="flex flex-col text-center">
+                    <span id="origSize" class="text-[9px] font-bold text-slate-400 tabular-nums">0 KB</span>
+                    <span class="text-[5px] text-slate-500 uppercase font-black tracking-tighter">Original</span>
                 </div>
-                <div class="flex flex-col">
-                    <span class="hidden sm:block text-[6px] text-emerald-500 uppercase font-black">Opt</span>
-                    <span id="optSize" class="text-[9px] font-bold text-emerald-400">0 KB</span>
+                <div class="flex flex-col text-center">
+                    <span id="optSize" class="text-[9px] font-bold text-emerald-400 tabular-nums">0 KB</span>
+                    <span class="text-[5px] text-emerald-500/70 uppercase font-black tracking-tighter">Optimized</span>
                 </div>
                 <div class="bg-blue-900/30 px-1.5 py-0.5 rounded border border-blue-800/50 text-[8px] font-black text-blue-400">
                     <span id="reduction">0%</span>
+                </div>
+                <!-- NEW: Resolution Stats -->
+                <div class="hidden md:flex flex-col text-center border-l border-slate-800 pl-4">
+                    <span id="resChange" class="text-[9px] font-bold text-slate-400 tabular-nums">0 x 0</span>
+                    <span class="text-[5px] text-slate-500 uppercase font-black tracking-tighter">Resolution</span>
                 </div>
             </div>
         </div>
@@ -148,16 +176,13 @@
             <button id="clearBtn" class="hidden bg-slate-800 hover:bg-red-500 text-slate-400 hover:text-white p-1.5 rounded-lg transition-all" title="Clear Screen">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
             </button>
-
             <a id="downloadBtn" href="#" download="optimized.webp" class="hidden bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg transition flex items-center gap-1 active:scale-95">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-                <span class="hidden sm:inline">Save Image</span>
-                <span class="sm:hidden">Save</span>
+                <svg id="saveIcon" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                <span class="hidden sm:inline text-xs font-bold uppercase" id="saveText">Save</span>
             </a>
-
             <label id="headerUpload" class="bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1.5 rounded-xl cursor-pointer transition text-[9px] font-black uppercase flex items-center gap-1.5 shadow-lg">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-                <span class="hidden xs:inline">Upload</span>
+                <span class="hidden xs:inline text-xs font-black">Upload</span>
                 <input type="file" id="fileInput" class="hidden" accept="image/*">
             </label>
         </div>
@@ -165,100 +190,104 @@
 
     <main class="flex-grow flex flex-col lg:flex-row relative overflow-hidden bg-slate-50">
         
-        <!-- Empty State: Interactive Upload Card -->
+        <!-- Empty State -->
         <div id="emptyState" class="absolute inset-0 z-40 bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
             <label for="fileInput" class="group cursor-pointer">
                 <div class="bg-white p-12 sm:p-20 rounded-[3rem] shadow-2xl border border-slate-100 transition-all duration-500 hover:shadow-[0_20px_50px_rgba(59,130,246,0.15)] hover:scale-[1.02] flex flex-col items-center max-w-md relative overflow-hidden">
                     <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-500/5 blur-3xl rounded-full"></div>
-                    
                     <div class="bg-blue-600 p-6 rounded-[1.5rem] shadow-lg mb-8 text-white group-hover:scale-110 transition-transform duration-500">
-                        <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                        <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                     </div>
-                    
                     <h2 class="text-2xl font-black text-slate-900 uppercase tracking-tight">Simulator Lab</h2>
-                    <p class="text-slate-400 text-[10px] mt-2 uppercase font-black tracking-[0.2em]">Ready to optimize your media?</p>
-                    
-                    <div class="mt-10 flex flex-col items-center gap-4">
-                        <span class="bg-blue-600 text-white px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-blue-600/20 group-hover:bg-blue-700 transition-colors">
-                            Select Photo
-                        </span>
-                        <p class="text-slate-300 text-[9px] font-bold uppercase tracking-widest hidden sm:block">or drag & drop here</p>
+                    <p class="text-slate-400 text-[10px] mt-2 uppercase font-black tracking-[0.2em]">Optimized result Preview</p>
+                    <div class="mt-10">
+                        <span class="bg-blue-600 text-white px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-blue-600/20 group-hover:bg-blue-700 transition-colors">Select Photo</span>
                     </div>
                 </div>
             </label>
         </div>
 
         <!-- Tool Sidebar -->
-        <aside id="mainUI" class="hidden shrink-0 w-full lg:w-64 bg-white border-t lg:border-t-0 lg:border-r border-slate-200 p-3 lg:p-6 order-last lg:order-first z-30 overflow-y-auto no-scrollbar">
-            <div class="flex flex-col gap-4">
+        <aside id="mainUI" class="hidden shrink-0 w-full lg:w-72 bg-white border-t lg:border-t-0 lg:border-r border-slate-200 order-last lg:order-first z-30 no-scrollbar">
+            <div class="p-4 flex flex-col gap-3">
                 
-                <!-- Simplified Row: Format and Reset -->
-                <div class="grid grid-cols-[1fr_32px] gap-2 items-end shrink-0 w-full">
+                <!-- Control Row -->
+                <div class="grid grid-cols-[1fr_repeat(4,32px)] gap-1.5 items-end w-full">
                     <div class="min-w-0">
-                        <label class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Export Format</label>
-                        <select id="formatSelect" class="compact-input">
+                        <label class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Format</label>
+                        <select id="formatSelect" class="compact-input h-[28px]">
                             <option value="image/webp" selected>WEBP</option>
                             <option value="image/jpeg">JPG</option>
                             <option value="image/png">PNG</option>
                         </select>
                     </div>
-                    <button id="resetSimBtnIcon" class="bg-slate-50 hover:bg-blue-600 text-slate-400 hover:text-white h-[26px] w-8 flex shrink-0 items-center justify-center rounded-lg transition-colors border border-slate-200" title="Reset Simulation">
+                    <button id="bestModeBtn" class="bg-amber-50 hover:bg-amber-500 text-amber-600 hover:text-white h-[28px] w-8 flex shrink-0 items-center justify-center rounded-lg transition-colors border border-amber-100" title="Best Fit (900px @ 80%)">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+                    </button>
+                    <button id="hqModeBtn" class="bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white h-[28px] w-8 flex shrink-0 items-center justify-center rounded-lg transition-colors border border-emerald-100" title="HQ Mode (2200px @ 90%)">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                    </button>
+                    <button id="aiOptimizeBtnIcon" class="bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white h-[28px] w-8 flex shrink-0 items-center justify-center rounded-lg transition-colors border border-blue-100" title="AI Auto Fix">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-7.714 2.143L11 21l-2.286-6.857L1 12l7.714-2.143L11 3z"/></svg>
+                    </button>
+                    <button id="resetSimBtnIcon" class="bg-slate-50 hover:bg-blue-600 text-slate-400 hover:text-white h-[28px] w-8 flex shrink-0 items-center justify-center rounded-lg transition-colors border border-slate-200" title="Reset Simulation">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                     </button>
                 </div>
 
-                <!-- Sliders Section -->
-                <div class="space-y-5 pt-1 border-t border-slate-50">
-                    <div class="space-y-1.5">
+                <!-- Sliders -->
+                <div class="grid grid-cols-2 lg:grid-cols-1 gap-x-4 lg:gap-y-4 pt-1 border-t border-slate-50">
+                    <div class="flex flex-col gap-1.5">
                         <div class="flex justify-between items-center text-[8px] font-black uppercase tracking-tight">
-                            <span class="text-slate-400">Target Width</span>
-                            <span id="wLabel" class="stat-label text-blue-600 bg-blue-50 px-1.5 rounded">0px</span>
+                            <span class="text-slate-400">Width</span>
+                            <span id="wLabel" class="stat-label text-blue-600 bg-blue-50 px-1 rounded text-[9px]">0px</span>
                         </div>
                         <input type="range" id="widthSlider" min="100">
                     </div>
-
-                    <div id="qualitySection" class="space-y-1.5">
+                    <div id="qualitySection" class="flex flex-col gap-1.5">
                         <div class="flex justify-between items-center text-[8px] font-black uppercase tracking-tight">
                             <span class="text-slate-400">Quality</span>
-                            <span id="qLabel" class="stat-label text-blue-600 bg-blue-50 px-1.5 rounded">80%</span>
+                            <span id="qLabel" class="stat-label text-blue-600 bg-blue-50 px-1 rounded text-[9px]">80%</span>
                         </div>
                         <input type="range" id="qualitySlider" min="1" max="100" value="80">
-                    </div>
-
-                    <div class="pt-2 hidden lg:block">
-                        <button id="resetSimBtnDesktop" class="w-full py-2 bg-slate-50 hover:bg-blue-600 text-slate-400 hover:text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-all border border-slate-200 flex items-center justify-center gap-2">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                            <span>Reset Simulation</span>
-                        </button>
                     </div>
                 </div>
             </div>
         </aside>
 
-        <!-- Preview Area -->
-        <section class="flex-1 relative overflow-hidden bg-slate-100 pattern-dots">
-            <div id="simLoader" class="hidden absolute inset-0 bg-white/30 backdrop-blur-[1px] z-20 flex items-center justify-center pointer-events-none transition-opacity duration-200">
-                <div class="loader w-10 h-10 border-4 border-blue-600 rounded-full"></div>
+        <!-- Viewport -->
+        <section id="viewport" class="pattern-dots">
+            <div id="simLoader" class="hidden absolute inset-0 z-20 flex items-center justify-center pointer-events-none transition-opacity duration-200">
+                <div class="loader-minimal"></div>
             </div>
             
-            <div class="absolute inset-0 overflow-auto no-scrollbar touch-none scroll-smooth" id="scrollContainer">
-                <div id="previewWrapper">
-                    <div class="relative inline-block text-center" id="zoomTarget">
-                        <img id="previewImg" class="max-w-full h-auto shadow-2xl rounded-xl border-4 border-white bg-white pointer-events-none user-select-none transition-opacity duration-300">
+            <div class="compare-control-floating">
+                <button id="toggleCompare" class="hidden floating-btn" title="Compare Mode">
+                    <div class="flip-anim">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                     </div>
+                </button>
+            </div>
+
+            <div id="zoomTarget">
+                <div id="compContainer" class="comp-container">
+                    <!-- Labels -->
+                    <div id="lblOrig" class="comp-label left-4 hidden">Original</div>
+                    <div id="lblResult" class="comp-label right-4 hidden text-emerald-600">Result</div>
+
+                    <img id="origPreviewImg" class="max-w-none pointer-events-none user-select-none">
+                    <div id="compAfter" class="comp-after">
+                        <img id="previewImg" class="max-w-none pointer-events-none user-select-none bg-white">
+                    </div>
+                    <div id="compSlider" class="comp-slider hidden"></div>
                 </div>
             </div>
-            
-            <!-- Functional Zoom Controls (FAB) -->
-            <div id="zoomControls" class="hidden flex flex-col gap-2 absolute bottom-4 right-4 z-30">
-                <button id="btnZoomIn" class="zoom-fab" title="Zoom In">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-                </button>
-                <button id="btnZoomOut" class="zoom-fab" title="Zoom Out">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M18 12H6"/></svg>
-                </button>
+
+            <div id="zoomControls" class="hidden zoom-controls-floating">
+                <button id="btnZoomIn" class="zoom-fab"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg></button>
+                <button id="btnZoomOut" class="zoom-fab"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M18 12H6"/></svg></button>
                 <div class="bg-white/90 backdrop-blur border border-slate-200 px-2 py-1 rounded-full text-[9px] font-black text-blue-500 text-center shadow-sm">
-                    <span id="zLabel">100%</span>
+                    <span id="zLabel">Fit</span>
                 </div>
             </div>
         </section>
@@ -267,36 +296,49 @@
     <script>
         let originalImage = null, originalFile = null, debounceTimer = null;
         let currentMime = 'image/webp';
-        let currentZoom = 100;
-        let initialDist = 0, baseZoom = 100;
+        
+        let scale = 1, posX = 0, posY = 0;
+        let isDragging = false, isSliding = false, startX = 0, startY = 0;
+        let initialDist = 0, initialScale = 1, sliderPos = 50, compareMode = false;
 
         const ui = {
             fileInput: document.getElementById('fileInput'),
             widthSlider: document.getElementById('widthSlider'),
             qualitySlider: document.getElementById('qualitySlider'),
             formatSelect: document.getElementById('formatSelect'),
+            bestModeBtn: document.getElementById('bestModeBtn'),
+            hqModeBtn: document.getElementById('hqModeBtn'),
+            aiOptimizeBtnIcon: document.getElementById('aiOptimizeBtnIcon'),
+            toggleCompare: document.getElementById('toggleCompare'),
+            compSlider: document.getElementById('compSlider'),
+            compAfter: document.getElementById('compAfter'),
+            compContainer: document.getElementById('compContainer'),
             wLabel: document.getElementById('wLabel'),
             qLabel: document.getElementById('qLabel'),
             zLabel: document.getElementById('zLabel'),
             previewImg: document.getElementById('previewImg'),
+            origPreviewImg: document.getElementById('origPreviewImg'),
             zoomTarget: document.getElementById('zoomTarget'),
-            scrollContainer: document.getElementById('scrollContainer'),
+            viewport: document.getElementById('viewport'),
             origSize: document.getElementById('origSize'),
             optSize: document.getElementById('optSize'),
             reduction: document.getElementById('reduction'),
             downloadBtn: document.getElementById('downloadBtn'),
             clearBtn: document.getElementById('clearBtn'),
             resetSimBtnIcon: document.getElementById('resetSimBtnIcon'),
-            resetSimBtnDesktop: document.getElementById('resetSimBtnDesktop'),
             simLoader: document.getElementById('simLoader'),
             emptyState: document.getElementById('emptyState'),
             mainUI: document.getElementById('mainUI'),
             headerUpload: document.getElementById('headerUpload'),
             headerStats: document.getElementById('headerStats'),
-            qualitySection: document.getElementById('qualitySection'),
             zoomControls: document.getElementById('zoomControls'),
             btnZoomIn: document.getElementById('btnZoomIn'),
-            btnZoomOut: document.getElementById('btnZoomOut')
+            btnZoomOut: document.getElementById('btnZoomOut'),
+            lblOrig: document.getElementById('lblOrig'),
+            lblResult: document.getElementById('lblResult'),
+            resChange: document.getElementById('resChange'),
+            saveIcon: document.getElementById('saveIcon'),
+            saveText: document.getElementById('saveText')
         };
 
         ui.fileInput.onchange = e => {
@@ -306,44 +348,20 @@
             const reader = new FileReader();
             reader.onload = ev => {
                 const img = new Image();
-                img.onload = () => { originalImage = img; setupUI(file, img); };
+                img.onload = () => { 
+                    originalImage = img; 
+                    ui.origPreviewImg.src = ev.target.result;
+                    setupUI(file, img); 
+                };
                 img.src = ev.target.result;
             };
             reader.readAsDataURL(file);
         };
 
-        ui.formatSelect.onchange = () => {
-            currentMime = ui.formatSelect.value;
-            toggleQualityUI();
-            updateDownloadExt();
-            triggerSim();
-        };
-
-        function toggleQualityUI() {
-            if (currentMime === 'image/png') {
-                ui.qualitySection.style.opacity = '0.3';
-                ui.qualitySection.style.pointerEvents = 'none';
-            } else {
-                ui.qualitySection.style.opacity = '1';
-                ui.qualitySection.style.pointerEvents = 'auto';
-            }
-        }
-
-        function updateDownloadExt() {
-            const extMap = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
-            const ext = extMap[currentMime] || 'webp';
-            ui.downloadBtn.setAttribute('download', `BulkPix_Sim_${Date.now()}.${ext}`);
-        }
-
-        function formatBytes(bytes) {
-            if (bytes === 0) return '0 B';
-            const k = 1024, sizes = ['B', 'KB', 'MB'], i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-        }
-
         function setupUI(file, img) {
             ui.emptyState.classList.add('hidden');
             ui.mainUI.classList.remove('hidden');
+            ui.mainUI.classList.add('flex');
             ui.headerStats.classList.remove('hidden');
             ui.headerStats.classList.add('flex');
             ui.headerUpload.classList.add('hidden'); 
@@ -351,108 +369,204 @@
             ui.downloadBtn.classList.add('flex');
             ui.clearBtn.classList.remove('hidden');
             ui.zoomControls.classList.remove('hidden');
+            ui.toggleCompare.classList.remove('hidden');
 
             ui.widthSlider.max = img.width;
             ui.widthSlider.value = Math.min(img.width, 1200);
-            ui.wLabel.innerText = ui.widthSlider.value + 'px';
             ui.origSize.innerText = formatBytes(file.size);
             
-            currentZoom = 100;
-            updateZoomUI();
             triggerSim();
-            
-            setTimeout(() => {
-                ui.scrollContainer.scrollLeft = (ui.scrollContainer.scrollWidth - ui.scrollContainer.clientWidth) / 2;
-                ui.scrollContainer.scrollTop = (ui.scrollContainer.scrollHeight - ui.scrollContainer.clientHeight) / 2;
-            }, 100);
+            resetView();
         }
 
-        function updateZoomUI() {
-            currentZoom = Math.min(Math.max(currentZoom, 50), 400);
-            if(ui.zLabel) ui.zLabel.innerText = Math.round(currentZoom) + '%';
-            ui.zoomTarget.style.transform = `scale(${currentZoom / 100})`;
+        /* --- PERCENTAGE-BASED ANCHOR LOGIC --- */
+        function getRelativeAnchor() {
+            const rect = ui.viewport.getBoundingClientRect();
+            const w = parseInt(ui.widthSlider.value) * scale;
+            const h = Math.round(originalImage.height * (parseInt(ui.widthSlider.value) / originalImage.width)) * scale;
+            return {
+                pctX: (rect.width / 2 - posX) / w,
+                pctY: (rect.height / 2 - posY) / h
+            };
         }
 
-        ui.btnZoomIn.onclick = () => { currentZoom += 25; updateZoomUI(); };
-        ui.btnZoomOut.onclick = () => { currentZoom -= 25; updateZoomUI(); };
+        function restoreAnchor(anchor) {
+            const rect = ui.viewport.getBoundingClientRect();
+            const w = parseInt(ui.widthSlider.value) * scale;
+            const h = Math.round(originalImage.height * (parseInt(ui.widthSlider.value) / originalImage.width)) * scale;
+            posX = rect.width / 2 - (anchor.pctX * w);
+            posY = rect.height / 2 - (anchor.pctY * h);
+            updateTransform();
+        }
 
-        // Pinch Zoom Logic (Mobile)
-        ui.scrollContainer.addEventListener('touchstart', e => {
-            if (e.targetTouches.length === 2) {
-                initialDist = Math.hypot(
-                    e.targetTouches[0].pageX - e.targetTouches[1].pageX,
-                    e.targetTouches[0].pageY - e.targetTouches[1].pageY
-                );
-                baseZoom = currentZoom;
-            }
-        }, { passive: true });
-
-        ui.scrollContainer.addEventListener('touchmove', e => {
-            if (e.targetTouches.length === 2) {
-                const currentDist = Math.hypot(
-                    e.targetTouches[0].pageX - e.targetTouches[1].pageX,
-                    e.targetTouches[0].pageY - e.targetTouches[1].pageY
-                );
-                currentZoom = baseZoom * (currentDist / initialDist);
-                updateZoomUI();
-            }
-        }, { passive: true });
-
-        const handleReset = () => {
+        /* --- PRESETS --- */
+        ui.bestModeBtn.onclick = () => {
             if (!originalImage) return;
-            ui.widthSlider.value = Math.min(originalImage.width, 1200);
+            const anchor = getRelativeAnchor();
+            ui.widthSlider.value = Math.min(originalImage.width, 900);
             ui.qualitySlider.value = 80;
-            ui.formatSelect.value = 'image/webp';
-            currentMime = 'image/webp';
-            currentZoom = 100;
-            ui.wLabel.innerText = ui.widthSlider.value + 'px';
-            ui.qLabel.innerText = '80%';
-            updateZoomUI();
-            toggleQualityUI();
-            updateDownloadExt();
             triggerSim();
-            ui.scrollContainer.scrollLeft = (ui.scrollContainer.scrollWidth - ui.scrollContainer.clientWidth) / 2;
-            ui.scrollContainer.scrollTop = (ui.scrollContainer.scrollHeight - ui.scrollContainer.clientHeight) / 2;
+            restoreAnchor(anchor);
         };
 
-        ui.resetSimBtnIcon.onclick = handleReset;
-        ui.resetSimBtnDesktop.onclick = handleReset;
-
-        ui.clearBtn.onclick = () => {
-            originalImage = null; originalFile = null;
-            ui.fileInput.value = ''; ui.previewImg.src = '';
-            ui.emptyState.classList.remove('hidden');
-            ui.mainUI.classList.add('hidden');
-            ui.headerStats.classList.add('hidden');
-            ui.headerUpload.classList.remove('hidden');
-            ui.downloadBtn.classList.add('hidden');
-            ui.clearBtn.classList.add('hidden');
-            ui.zoomControls.classList.add('hidden');
+        ui.hqModeBtn.onclick = () => {
+            if (!originalImage) return;
+            const anchor = getRelativeAnchor();
+            ui.widthSlider.value = Math.min(originalImage.width, 2200);
+            ui.qualitySlider.value = 90;
+            triggerSim();
+            restoreAnchor(anchor);
         };
 
-        ui.widthSlider.oninput = () => { ui.wLabel.innerText = ui.widthSlider.value + 'px'; triggerSim(); };
-        ui.qualitySlider.oninput = () => { ui.qLabel.innerText = ui.qualitySlider.value + '%'; triggerSim(); };
+        ui.aiOptimizeBtnIcon.onclick = () => {
+            if (!originalImage) return;
+            const anchor = getRelativeAnchor();
+            ui.formatSelect.value = 'image/webp';
+            ui.qualitySlider.value = 82;
+            ui.widthSlider.value = Math.min(originalImage.width, 1920);
+            if (!compareMode) ui.toggleCompare.click();
+            triggerSim();
+            restoreAnchor(anchor);
+        };
 
+        /* --- VIEWPORT ENGINE --- */
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024, sizes = ['B', 'KB', 'MB'], i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        function updateTransform() {
+            ui.zoomTarget.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
+            ui.zLabel.innerText = Math.round(scale * 100) + '%';
+        }
+
+        function resetView() {
+            if (!originalImage) return;
+            setTimeout(() => {
+                const rect = ui.viewport.getBoundingClientRect();
+                const imgW = parseInt(ui.widthSlider.value);
+                const imgH = Math.round(originalImage.height * (imgW / originalImage.width));
+                scale = Math.min((rect.width - 60) / imgW, (rect.height - 60) / imgH, 1);
+                posX = (rect.width - imgW * scale) / 2;
+                posY = (rect.height - imgH * scale) / 2;
+                updateTransform();
+            }, 50);
+        }
+
+        ui.toggleCompare.onclick = () => {
+            compareMode = !compareMode;
+            if (compareMode) {
+                ui.compSlider.classList.remove('hidden');
+                ui.lblOrig.classList.remove('hidden');
+                ui.lblResult.classList.remove('hidden');
+                ui.toggleCompare.classList.add('active-compare');
+                updateSliderView();
+            } else {
+                ui.compSlider.classList.add('hidden');
+                ui.lblOrig.classList.add('hidden');
+                ui.lblResult.classList.add('hidden');
+                ui.toggleCompare.classList.remove('active-compare');
+                ui.compAfter.style.clipPath = 'none';
+            }
+        };
+
+        function updateSliderView() {
+            if (!compareMode) return;
+            ui.compSlider.style.left = `${sliderPos}%`;
+            ui.compAfter.style.clipPath = `inset(0 0 0 ${sliderPos}%)`;
+        }
+
+        const handleStart = (clientX, clientY) => {
+            const rectComp = ui.compContainer.getBoundingClientRect();
+            const handleX = rectComp.left + (rectComp.width * (sliderPos / 100));
+            if (compareMode && Math.abs(clientX - handleX) < 55) {
+                isSliding = true; isDragging = false;
+            } else {
+                isDragging = true; isSliding = false;
+                startX = clientX - posX; startY = clientY - posY;
+            }
+        };
+
+        const handleMove = (clientX, clientY) => {
+            if (isSliding) {
+                const rect = ui.compContainer.getBoundingClientRect();
+                let x = (clientX - rect.left) / rect.width;
+                sliderPos = Math.max(0, Math.min(100, x * 100));
+                updateSliderView();
+            } else if (isDragging) {
+                posX = clientX - startX; posY = clientY - startY; updateTransform();
+            }
+        };
+
+        ui.viewport.onmousedown = e => handleStart(e.clientX, e.clientY);
+        window.onmousemove = e => handleMove(e.clientX, e.clientY);
+        window.onmouseup = () => { isDragging = isSliding = false; };
+
+        ui.viewport.ontouchstart = e => {
+            if (e.touches.length === 1) handleStart(e.touches[0].clientX, e.touches[0].clientY);
+            else if (e.touches.length === 2) {
+                isDragging = isSliding = false;
+                initialDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                initialScale = scale;
+            }
+        };
+
+        ui.viewport.ontouchmove = e => {
+            if (e.touches.length === 1) handleMove(e.touches[0].clientX, e.touches[0].clientY);
+            else if (e.touches.length === 2) {
+                const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                const delta = dist / initialDist;
+                const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2, midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                const rect = ui.viewport.getBoundingClientRect();
+                const newScale = Math.min(Math.max(initialScale * delta, 0.05), 10);
+                posX = (midX - rect.left) - ((midX - rect.left) - posX) * (newScale / scale);
+                posY = (midY - rect.top) - ((midY - rect.top) - posY) * (newScale / scale);
+                scale = newScale;
+                updateTransform();
+            }
+        };
+        ui.viewport.ontouchend = () => { isDragging = isSliding = false; };
+
+        ui.viewport.onwheel = e => {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? 0.85 : 1.15;
+            const newScale = Math.min(Math.max(scale * delta, 0.05), 10);
+            const rect = ui.viewport.getBoundingClientRect();
+            posX = (e.clientX - rect.left) - ((e.clientX - rect.left) - posX) * (newScale / scale);
+            posY = (e.clientY - rect.top) - ((e.clientY - rect.top) - posY) * (newScale / scale);
+            scale = newScale;
+            updateTransform();
+        };
+
+        /* --- SIM ENGINE --- */
         async function updateSim() {
             if (!originalImage) return;
-            
-            const canvas = document.createElement('canvas');
             const targetW = parseInt(ui.widthSlider.value);
             const targetH = Math.round(originalImage.height * (targetW / originalImage.width));
+            
+            ui.wLabel.innerText = targetW + 'px';
+            ui.qLabel.innerText = ui.qualitySlider.value + '%';
+            
+            // Sync UI res stats
+            ui.resChange.innerText = `${originalImage.width}×${originalImage.height} → ${targetW}×${targetH}`;
+
+            ui.previewImg.style.width = ui.origPreviewImg.style.width = targetW + 'px';
+            ui.previewImg.style.height = ui.origPreviewImg.style.height = targetH + 'px';
+            
+            const canvas = document.createElement('canvas');
             canvas.width = targetW; canvas.height = targetH;
             const ctx = canvas.getContext('2d');
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
             ctx.drawImage(originalImage, 0, 0, targetW, targetH);
             
-            const finalQuality = parseInt(ui.qualitySlider.value) / 100;
-            
+            const q = parseInt(ui.qualitySlider.value) / 100;
             canvas.toBlob(blob => {
                 if (blob) {
                     const url = URL.createObjectURL(blob);
-                    // Pre-load logic to prevent white flash
-                    const imgPreloader = new Image();
-                    imgPreloader.onload = () => {
+                    const pre = new Image();
+                    pre.onload = () => {
                         if (ui.previewImg.src.startsWith('blob:')) URL.revokeObjectURL(ui.previewImg.src);
                         ui.previewImg.src = url;
                         ui.downloadBtn.href = url;
@@ -460,15 +574,43 @@
                         ui.reduction.innerText = Math.max(0, Math.round((1 - (blob.size / originalFile.size)) * 100)) + '%';
                         ui.simLoader.classList.add('hidden');
                     };
-                    imgPreloader.src = url;
+                    pre.src = url;
                 }
-            }, currentMime, finalQuality);
+            }, ui.formatSelect.value, q);
         }
+
+        ui.downloadBtn.onclick = () => {
+            ui.saveText.innerText = "Saved";
+            ui.saveIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />`;
+            setTimeout(() => {
+                ui.saveText.innerText = "Save";
+                ui.saveIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>`;
+            }, 2000);
+        };
 
         function triggerSim() {
             clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(updateSim, 50);
+            debounceTimer = setTimeout(updateSim, 30);
         }
+
+        ui.widthSlider.oninput = () => {
+            const anchor = getRelativeAnchor();
+            triggerSim();
+            restoreAnchor(anchor);
+        };
+        ui.qualitySlider.oninput = triggerSim;
+        ui.formatSelect.onchange = triggerSim;
+        ui.btnZoomIn.onclick = () => { scale *= 1.3; updateTransform(); };
+        ui.btnZoomOut.onclick = () => { scale *= 0.7; updateTransform(); };
+        ui.clearBtn.onclick = () => location.reload();
+        ui.resetSimBtnIcon.onclick = () => {
+            if (!originalImage) return;
+            ui.qualitySlider.value = 80;
+            ui.widthSlider.value = Math.min(originalImage.width, 1200);
+            ui.formatSelect.value = 'image/webp';
+            triggerSim();
+            resetView();
+        };
     </script>
 </body>
 </html>
